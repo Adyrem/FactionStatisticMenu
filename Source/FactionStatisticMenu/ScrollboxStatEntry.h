@@ -31,11 +31,11 @@ class FACTIONSTATISTICMENU_API UScrollboxStatEntry : public UUserWidget
 
 public:
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FSlateColor equal_color = FSlateColor(FLinearColor::White);
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FSlateColor less_than_color = FSlateColor(FLinearColor::Red);
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FSlateColor more_than_color = FSlateColor(FLinearColor::Green);
 
 	/**

@@ -42,11 +42,11 @@ public:
 	* The assets for buildings, units and heroes are seperate to be able to add them to different boxes.
 	* Could also be handled through an enum in the struct if needed
 	*/
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TMap<FString, FAssetWithAnimation> building_assets;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TMap<FString, FAssetWithAnimation> unit_assets;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TMap<FString, FAssetWithAnimation> heroes_assets;
 
 	/**

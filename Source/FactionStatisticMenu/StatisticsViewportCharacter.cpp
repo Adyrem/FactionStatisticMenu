@@ -15,20 +15,20 @@ AStatisticsViewportCharacter::AStatisticsViewportCharacter()
 
 	GetCapsuleComponent()->SetSimulatePhysics(true); //otherwise only has gravity once controlled
 
-	spring_arm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
-	spring_arm->bInheritPitch = true;
-	spring_arm->bInheritYaw = true;
-	spring_arm->AddRelativeLocation(FVector(0, 0, 100)); //Move the camera away from the feet
-	spring_arm->SetupAttachment(GetMesh());
+	m_SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
+	m_SpringArm->bInheritPitch = true;
+	m_SpringArm->bInheritYaw = true;
+	m_SpringArm->AddRelativeLocation(FVector(0, 0, 100)); //Move the camera away from the feet
+	m_SpringArm->SetupAttachment(GetMesh());
 
-	scene_capture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("Scene Capture"));
-	scene_capture->SetupAttachment(spring_arm);
+	m_SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("Scene Capture"));
+	m_SceneCapture->SetupAttachment(m_SpringArm);
 
-	static_mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Static Mesh"));
-	static_mesh->SetupAttachment(GetCapsuleComponent());
+	m_StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Static Mesh"));
+	m_StaticMesh->SetupAttachment(GetCapsuleComponent());
 
 	GetMesh()->AddRelativeLocation(FVector(0, 0, -88)); //by default move it to the bottom of the collider
-	static_mesh->AddRelativeLocation(FVector(0, 0, -88));
+	m_StaticMesh->AddRelativeLocation(FVector(0, 0, -88));
 }
 
 // Called when the game starts or when spawned
@@ -50,7 +50,7 @@ void AStatisticsViewportCharacter::SetupPlayerInputComponent(UInputComponent* Pl
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	player_controller = GetWorld()->GetFirstPlayerController();
+	m_PlayerController = GetWorld()->GetFirstPlayerController();
 
 	PlayerInputComponent->BindAxis("Turn", this, &AStatisticsViewportCharacter::RotateSceneX);
 	PlayerInputComponent->BindAxis("LookUp", this, &AStatisticsViewportCharacter::RotateSceneY);
@@ -59,13 +59,18 @@ void AStatisticsViewportCharacter::SetupPlayerInputComponent(UInputComponent* Pl
 	PlayerInputComponent->BindAction("MouseClick", IE_Pressed, this, &AStatisticsViewportCharacter::AddMouseInput);
 }
 
+void AStatisticsViewportCharacter::InitializeCharacter(UTextureRenderTarget2D* scene_capture)
+{
+	m_SceneCapture->TextureTarget = scene_capture;
+}
+
 void AStatisticsViewportCharacter::DisplayMesh(UStreamableRenderAsset* mesh_to_show)
 {
 	UStaticMesh* cast_to_static = Cast<UStaticMesh>(mesh_to_show);
 	if (cast_to_static)
 	{
-		static_mesh->SetVisibility(true);
-		static_mesh->SetStaticMesh(cast_to_static);
+		m_StaticMesh->SetVisibility(true);
+		m_StaticMesh->SetStaticMesh(cast_to_static);
 		GetMesh()->SetVisibility(false);
 		return;
 	}
@@ -75,7 +80,7 @@ void AStatisticsViewportCharacter::DisplayMesh(UStreamableRenderAsset* mesh_to_s
 	{
 		GetMesh()->SetVisibility(true);
 		GetMesh()->SetSkeletalMesh(cast_to_skeletal);
-		static_mesh->SetVisibility(false);
+		m_StaticMesh->SetVisibility(false);
 		return;
 	}
 	else
@@ -90,7 +95,7 @@ void AStatisticsViewportCharacter::RotateSceneX(float value)
 	if (brotate_is_active)
 	{
 		const float rotate_amount = value * rotate_speed * GetWorld()->DeltaTimeSeconds;
-		spring_arm->AddLocalRotation(FRotator(0, rotate_amount, 0));
+		m_SpringArm->AddLocalRotation(FRotator(0, rotate_amount, 0));
 	}
 }
 
@@ -99,32 +104,32 @@ void AStatisticsViewportCharacter::RotateSceneY(float value)
 	if (brotate_is_active)
 	{
 		const float rotate_amount = value * rotate_speed * GetWorld()->DeltaTimeSeconds;
-		spring_arm->AddLocalRotation(FRotator(rotate_amount, 0, 0));
+		m_SpringArm->AddLocalRotation(FRotator(rotate_amount, 0, 0));
 
 		ResetRoll();
 
 		//save where the mouse is so it doesn't move after releasing
-		player_controller->bShowMouseCursor = false;
+		m_PlayerController->bShowMouseCursor = false;
 		if (m_MouseX && m_MouseY)
 		{
-			player_controller->SetMouseLocation(m_MouseX, m_MouseY);
+			m_PlayerController->SetMouseLocation(m_MouseX, m_MouseY);
 		}
 	}
 }
 
 void AStatisticsViewportCharacter::ResetRoll()
 {
-	FRotator current_rotation = spring_arm->GetRelativeRotation();
+	FRotator current_rotation = m_SpringArm->GetRelativeRotation();
 	current_rotation.Roll = 0;
-	spring_arm->SetRelativeRotation(current_rotation);
+	m_SpringArm->SetRelativeRotation(current_rotation);
 }
 
 void AStatisticsViewportCharacter::AddMouseInput()
 {
 	if (brotate_is_active)
 	{
-		player_controller->bShowMouseCursor = false;
-		player_controller->GetMousePosition(m_MouseX, m_MouseY);
+		m_PlayerController->bShowMouseCursor = false;
+		m_PlayerController->GetMousePosition(m_MouseX, m_MouseY);
 	}
 }
 
@@ -132,21 +137,21 @@ void AStatisticsViewportCharacter::RemoveMouseInput()
 {
 	if (brotate_is_active)
 	{
-		player_controller->bShowMouseCursor = true;
+		m_PlayerController->bShowMouseCursor = true;
 	}
 	brotate_is_active = false;
 }
 
 void AStatisticsViewportCharacter::ZoomViewport(float value)
 {
-	spring_arm->TargetArmLength += value * zoom_speed;
-	if (spring_arm->TargetArmLength <= 100)
+	m_SpringArm->TargetArmLength += value * zoom_speed;
+	if (m_SpringArm->TargetArmLength <= 100)
 	{
-		spring_arm->TargetArmLength = 100;
+		m_SpringArm->TargetArmLength = 100;
 	}
-	else if (spring_arm->TargetArmLength >= 500)
+	else if (m_SpringArm->TargetArmLength >= 500)
 	{
-		spring_arm->TargetArmLength = 500;
+		m_SpringArm->TargetArmLength = 500;
 	}
 }
 

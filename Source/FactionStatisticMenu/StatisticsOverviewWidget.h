@@ -27,41 +27,26 @@ class FACTIONSTATISTICMENU_API UStatisticsOverviewWidget : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 
-	/**
-	* Destroys the Viewport character and the viewport in turn doesn't work anymore. The viewport is hidden
-	*/
-	UFUNCTION(BlueprintCallable)
-		void DestroyViewport();
-
 	//need to be set, preferably in editor as they can be the same for all units except maybe special cases
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		TSubclassOf<UScrollboxStatEntry> scroll_entry_widget;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UTextureRenderTarget2D* main_render_target;
+
+	//default to 0,0,0
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		FVector main_spawnpoint;
-	//Ignored if comparison_viewport is not present. Otherwise needed
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UTextureRenderTarget2D* comparison_render_target;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		FVector comparison_spawnpoint;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		bool benable_color_coded_values = true;
 
-	//These should not be set in blueprint, as they should be passed through c++ either way, overwriting it
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-		UEntityDataAsset* main_data_asset;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-		UEntityDataAsset* comparison_data_asset;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-		UAnimSequence* main_animation;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-		UAnimSequence* comparison_animation;
-
-	UPROPERTY(meta = (BindWidget))
-		UImage* main_viewport;
-	UPROPERTY(meta = (BindWidgetOptional))
-		UImage* comparison_viewport;
+	//required, preferably through editor as it has to be added to a material
+	//ignored if OverwriteViewport was called, otherwise needed
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		UTextureRenderTarget2D* main_render_target;
+	//Ignored if comparison_viewport is not present, otherwise needed
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		UTextureRenderTarget2D* comparison_render_target;
 
 	/**
 	* Creates either a skeletal mesh or static mesh from a data asset.
@@ -75,32 +60,72 @@ public:
 	* @param image_to_set - The Image which shows the Viewport, taken from another widget, keeps rotation
 	* @param character_to_set - The Character in the Viewport of the other Widget
 	*/
-	void OverwriteViewport(UImage* image_to_set, AStatisticsViewportCharacter* character_to_set);
+	void OverwriteViewport(const TTuple<UImage*, AStatisticsViewportCharacter*> overwrite_from);
 
-	AStatisticsViewportCharacter* viewport_character;
+	/**
+	* Returns a structure to call OverwriteViewport from. Removes the need to know the implementation.
+	* @return A tuple of the image representing the viewport and the character seen in the viewport
+	*/
+	const TTuple<UImage*, AStatisticsViewportCharacter*> GetOverwriteStructure() const;
+
+	/**
+	* Initializes everything needed to build the viewport and display the statistics. Can also be used to reinitialize the object.
+	* @param main_data - data asset containing most importantly statistics and a mesh
+	* @param main_animation_sequence - animation applied to the mesh if it is a skeletal mesh
+	*/
+	void InitializeWidget(UEntityDataAsset* main_data, UAnimSequence* main_animation_sequence);
+	/**
+	* Initializes everyting needed to build the main and comparison viewport. Can also be used to reinitialize the object.
+	* @param main_data - data asset containing most importantly statistics and a mesh
+	* @param main_animation_sequence - animation applied to the mesh if it is a skeletal mesh
+	* @param comp_data - same as main data asset but for comparison
+	* @param comp_animation_sequence - same as main animation but for comparison
+	*/
+	void InitializeWidget(UEntityDataAsset* main_data, UAnimSequence* main_animation_sequence, UEntityDataAsset* comp_data, UAnimSequence* comp_animation_sequence);
 
 private:
 	/**
 	* Gives control to the character seen in the viewport
 	*/
 	UFUNCTION()
-		void OnViewportMouseDown(); 
+		void OnViewportMouseDown();
 	UFUNCTION()
 		void OnComparisonViewportMouseDown();
 
-	UPROPERTY(meta = (BindWidgetOptional))
-		UButton* m_CompareButton;
 	UPROPERTY(meta = (BindWidget))
 		UScrollBox* m_StatsScrollBox;
+	UPROPERTY(meta = (BindWidgetOptional))
+		UButton* m_CompareButton;
+
+	UPROPERTY(meta = (BindWidget))
+		UImage* main_viewport;
 	UPROPERTY(meta = (BindWidget))
 		UTextBlock* m_EntityName;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+		UImage* comparison_viewport;
 	UPROPERTY(meta = (BindWidgetOptional))
 		UTextBlock* m_ComparisonEntityName;
 
-	void AddEntriesToScrollBox();
+	/**
+	* Destroys the Viewport characters, so new ones can be created
+	*/
+	void DestroyViewport();
+
+	/**
+	* Adds certain stats to  the scrollbox, if that stat is not yet present in the scrollbox
+	* @param main - main data asset with stats of the unit/building
+	* @param comparison - if present, it's stats will be added to the scrollbox alongside the main entity stats
+	*/
+	void AddEntriesToScrollBox(const UEntityDataAsset* main, const UEntityDataAsset* comparison = nullptr);
+	/**
+	* Removes all entries in the stats scroll box an adds them again.
+	*/
+	void RebuildScrollboxEntries();
 	/**
 	* Creates a basic UScrollboxStatEntry and sets its name element
 	* @param name - needs to be unique, as widgets need different names
+	* @return Basic initialized scroll box entry widget
 	*/
 	UScrollboxStatEntry* PrepareScrollBoxEntry(const FName& name);
 	/**
@@ -108,7 +133,7 @@ private:
 	* @param difference - any int, intended to be the difference between 2 values
 	* @param applied_to - the comparison value of UScrollboxStatEntry will be changed
 	*/
-	void ApplyColorBasedOnDifference(const int32& difference, UScrollboxStatEntry* applied_to);
+	void ApplyColorBasedOnDifference(const int32& difference, UScrollboxStatEntry* applied_to) const;
 	/**
 	* Adds entires to the scrollbox specific to units
 	* @param unit_asset - the main data asset
@@ -126,12 +151,22 @@ private:
 	* @return The complete character that then can be possesed
 	*/
 	AStatisticsViewportCharacter* BuildViewport(
-		UStreamableRenderAsset* mesh, 
-		UTextureRenderTarget2D* render_target, 
-		const FVector& spawn_location = FVector(0, 0, 0), 
+		UEntityDataAsset* data_asset,
+		UTextureRenderTarget2D* render_target,
+		const FVector& spawn_location = FVector(0, 0, 0),
 		UAnimSequence* animation = nullptr
-	);
+	) const;
 
+	AStatisticsViewportCharacter* m_ViewportCharacter;
 	AStatisticsViewportCharacter* m_ComparisonViewportCharacter;
+	UPROPERTY(EditAnywhere)
+		UEntityDataAsset* m_MainDataAsset;
+	UPROPERTY(EditAnywhere)
+		UEntityDataAsset* m_ComparisonDataAsset;
+	UPROPERTY(EditAnywhere)
+		UAnimSequence* m_MainAnimation;
+	UPROPERTY(EditAnywhere)
+		UAnimSequence* m_ComparisonAnimation;
+
 	bool m_bWasViewportOverwritten = false;
 };

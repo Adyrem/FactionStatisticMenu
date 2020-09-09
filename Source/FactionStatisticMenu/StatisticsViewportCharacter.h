@@ -35,15 +35,15 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		USpringArmComponent* spring_arm;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		USceneCaptureComponent2D* scene_capture;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UStaticMeshComponent* static_mesh;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		float rotate_speed = 100.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		float zoom_speed = 10.f;
+
+	/**
+	* Initalizes Character with needed outside components
+	* @param scene_capture - The render target that can then be used to display a mini viewport
+	*/
+	void InitializeCharacter(UTextureRenderTarget2D* scene_capture);
 
 	/**
 	* Displays either a skeleton mesh or static mesh and hides the other type if already present
@@ -72,6 +72,14 @@ public:
 	bool brotate_is_active = true;
 
 private:
+	//VisibleAnywhere to show them in component list
+	UPROPERTY(VisibleAnywhere)
+		USpringArmComponent* m_SpringArm;
+	UPROPERTY(VisibleAnywhere)
+		USceneCaptureComponent2D* m_SceneCapture;
+	UPROPERTY(VisibleAnywhere)
+		UStaticMeshComponent* m_StaticMesh;
+
 	void ResetRoll();
 	void AddMouseInput();
 	void RemoveMouseInput();
@@ -79,5 +87,5 @@ private:
 	float m_MouseX;
 	float m_MouseY;
 
-	APlayerController* player_controller;
+	APlayerController* m_PlayerController;
 };

@@ -22,12 +22,12 @@ public:
 	/**
 	* This data asset will be attached to the next widget
 	*/
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		UEntityDataAsset* data_asset;
 	/**
 	* The animation will be attached to the mesh found in the data asset
 	*/
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		UAnimSequence* animation_sequence;
 
 private:

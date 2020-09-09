@@ -55,44 +55,38 @@ void AStatisticsOverviewHUD::OnUnitSelectionClick(UUnitSelectionButton* unit_sel
 
 		if (unit_selection_button && m_ComparisonOverview)
 		{
-			m_ComparisonWidget = CreateWidget<UStatisticsOverviewWidget>(GetWorld(), m_ComparisonOverview);
-			if (m_ComparisonWidget)
+			if (!m_ComparisonWidget)
 			{
-				m_ComparisonWidget->main_data_asset = m_MainSelectedUnit->data_asset;
-				m_ComparisonWidget->main_animation = m_MainSelectedUnit->animation_sequence;
-				m_ComparisonWidget->OverwriteViewport(m_StatisticsWidget->main_viewport, m_StatisticsWidget->viewport_character);
-
-				if (unit_selection_button->data_asset)
+				m_ComparisonWidget = CreateWidget<UStatisticsOverviewWidget>(GetWorld(), m_ComparisonOverview);
+				if (!m_ComparisonWidget)
 				{
-					m_ComparisonWidget->comparison_data_asset = unit_selection_button->data_asset;
+					return;
 				}
-				if (unit_selection_button->animation_sequence)
-				{
-					m_ComparisonWidget->comparison_animation = unit_selection_button->animation_sequence;
-				}
-				m_TopWidget = m_ComparisonWidget;
 				m_ComparisonWidget->AddToViewport();
 			}
+
+			m_ComparisonWidget->InitializeWidget(m_MainSelectedUnit->data_asset, m_MainSelectedUnit->animation_sequence, unit_selection_button->data_asset, unit_selection_button->animation_sequence);
+			m_ComparisonWidget->OverwriteViewport(m_StatisticsWidget->GetOverwriteStructure());
+			m_TopWidget = m_ComparisonWidget;
+			m_ComparisonWidget->SetVisibility(ESlateVisibility::Visible);
 		}
 	}
 	else if (unit_selection_button && m_StatisticsOverview)
 	{
-		//cant work with UUserWidget class because data assets need to be set
-		m_StatisticsWidget = CreateWidget<UStatisticsOverviewWidget>(GetWorld(), m_StatisticsOverview);
-		if (m_StatisticsWidget)
+		if (!m_StatisticsWidget)
 		{
-			if (unit_selection_button->data_asset)
+			m_StatisticsWidget = CreateWidget<UStatisticsOverviewWidget>(GetWorld(), m_StatisticsOverview);
+			if (!m_StatisticsWidget)
 			{
-				m_StatisticsWidget->main_data_asset = unit_selection_button->data_asset;
+				return;
 			}
-			if (unit_selection_button->animation_sequence)
-			{
-				m_StatisticsWidget->main_animation = unit_selection_button->animation_sequence;
-			}
-			m_TopWidget = m_StatisticsWidget;
 			m_StatisticsWidget->AddToViewport();
-			m_MainSelectedUnit = unit_selection_button;
 		}
+
+		m_StatisticsWidget->InitializeWidget(unit_selection_button->data_asset, unit_selection_button->animation_sequence);
+		m_TopWidget = m_StatisticsWidget;
+		m_MainSelectedUnit = unit_selection_button;
+		m_StatisticsWidget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	}
 }
 
@@ -100,19 +94,24 @@ void AStatisticsOverviewHUD::OnBackButtonClick(UWidget* caller)
 {
 	if (caller)
 	{
-		caller->SetVisibility(ESlateVisibility::Collapsed);
+		//setting to collapsed somehow disables input on any widget when hitting back from StatisticsWidget. 
+		//When calling directly, this doesn't happen, even though it is a virtual method
+		//This ONLY happens with this widget and I have no idea why
+		//For all other cases, it can be called directly from caller
+		if (!(m_TopWidget == m_StatisticsWidget || m_TopWidget == m_ComparisonWidget))
+		{
+			caller->SetVisibility(ESlateVisibility::Collapsed);
+		}
 
 		if (m_TopWidget == m_StatisticsWidget)
 		{
-			m_StatisticsWidget->DestroyViewport();
+			m_StatisticsWidget->SetVisibility(ESlateVisibility::Collapsed);
 			m_TopWidget = m_UnitSelectionWidget;
 		}
 		else if (m_TopWidget == m_ComparisonWidget)
 		{
-			m_ComparisonWidget->DestroyViewport();
-			//setting to visible somehow disables input on any widget when hitting back from StatisticsWidget. Same thing below
-			//This ONLY happens with this widget and I have no idea why
-			m_StatisticsWidget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+			m_ComparisonWidget->SetVisibility(ESlateVisibility::Collapsed);
+			m_StatisticsWidget->SetVisibility(ESlateVisibility::Visible);
 			m_TopWidget = m_StatisticsWidget;
 		}
 		else if (m_TopWidget == m_UnitSelectionWidget)
@@ -121,7 +120,7 @@ void AStatisticsOverviewHUD::OnBackButtonClick(UWidget* caller)
 			{
 				m_TopWidget = m_StatisticsWidget;
 				caller->SetVisibility(ESlateVisibility::Visible); //cancel out hiding just in this case
-				m_StatisticsWidget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+				m_StatisticsWidget->SetVisibility(ESlateVisibility::Visible);
 			}
 			else
 			{
@@ -142,7 +141,6 @@ void AStatisticsOverviewHUD::OnComparisonButtonClick()
 	else if (m_TopWidget == m_ComparisonWidget)
 	{
 		m_ComparisonWidget->SetVisibility(ESlateVisibility::Collapsed);
-		m_ComparisonWidget->DestroyViewport();
 	}
 	else
 	{
