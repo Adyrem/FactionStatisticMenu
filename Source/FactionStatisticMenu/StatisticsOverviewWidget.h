@@ -108,11 +108,6 @@ private:
 		UTextBlock* m_ComparisonEntityName;
 
 	/**
-	* Destroys the Viewport characters, so new ones can be created
-	*/
-	void DestroyViewport();
-
-	/**
 	* Adds certain stats to  the scrollbox, if that stat is not yet present in the scrollbox
 	* @param main - main data asset with stats of the unit/building
 	* @param comparison - if present, it's stats will be added to the scrollbox alongside the main entity stats
@@ -168,5 +163,5 @@ private:
 	UPROPERTY(EditAnywhere)
 		UAnimSequence* m_ComparisonAnimation;
 
-	bool m_bWasViewportOverwritten = false;
+	bool m_bViewportOverwritten = false;
 };

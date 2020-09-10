@@ -2,7 +2,6 @@
 
 #include "StatisticsOverviewWidget.h"
 #include "ScrollboxStatEntry.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
@@ -47,15 +46,21 @@ void UStatisticsOverviewWidget::InitializeWidget(UEntityDataAsset* main_data, UA
 {
 	m_MainDataAsset = main_data;
 	m_MainAnimation = main_animation_sequence;
-	DestroyViewport();
-	m_bWasViewportOverwritten = false; //only done after destroying the viewport, incase it was overwritten.
 	RebuildScrollboxEntries();
 
 	if (m_MainDataAsset)
 	{
 		m_EntityName->SetText(FText::FromString(main_data->ui_name));
 
-		m_ViewportCharacter = BuildViewport(m_MainDataAsset, main_render_target, main_spawnpoint, m_MainAnimation);
+		if (!m_ViewportCharacter)
+		{
+			m_ViewportCharacter = BuildViewport(m_MainDataAsset, main_render_target, main_spawnpoint, m_MainAnimation);
+		}
+		else
+		{
+			m_ViewportCharacter->DisplayMesh(RetrieveMeshfromDataAsset(m_MainDataAsset));
+			m_ViewportCharacter->GetMesh()->PlayAnimation(m_MainAnimation, true);
+		}
 	}
 	else
 	{
@@ -74,8 +79,17 @@ void UStatisticsOverviewWidget::InitializeWidget(UEntityDataAsset* main_data, UA
 		m_ComparisonEntityName->SetText(FText::FromString(m_ComparisonDataAsset->ui_name));
 		if (comparison_viewport)
 		{
-			m_ComparisonViewportCharacter = BuildViewport(m_ComparisonDataAsset, comparison_render_target, comparison_spawnpoint, m_ComparisonAnimation);
+			if (!m_ComparisonViewportCharacter)
+			{
+				m_ComparisonViewportCharacter = BuildViewport(m_ComparisonDataAsset, comparison_render_target, comparison_spawnpoint, m_ComparisonAnimation);
+			}
+			else
+			{
+				m_ComparisonViewportCharacter->DisplayMesh(RetrieveMeshfromDataAsset(m_ComparisonDataAsset));
+				m_ComparisonViewportCharacter->GetMesh()->PlayAnimation(m_ComparisonAnimation, true);
+			}
 		}
+
 	}
 }
 
@@ -274,7 +288,6 @@ AStatisticsViewportCharacter* UStatisticsOverviewWidget::BuildViewport(UEntityDa
 	{
 		if (character)
 		{
-			character->GetCharacterMovement()->GravityScale = 1;
 			character->InitializeCharacter(render_target);
 			character->DisplayMesh(mesh);
 
@@ -294,30 +307,19 @@ void UStatisticsOverviewWidget::OverwriteViewport(const TTuple<UImage*, AStatist
 	UImage* from_image = overwrite_from.Get<0>();
 	AStatisticsViewportCharacter* from_character = overwrite_from.Get<1>();
 
-	m_bWasViewportOverwritten = true;
-	main_viewport->SetBrushFromMaterial(from_image->GetDynamicMaterial());
-	if (m_ViewportCharacter)
+	if (m_bViewportOverwritten == false) //only make this possible once, as the overwritten character cannot be deleted
 	{
-		m_ViewportCharacter->Destroy(); //get rid of the character if this was called multiple times
+		m_ViewportCharacter->Destroy();
 	}
+	main_viewport->SetBrushFromMaterial(from_image->GetDynamicMaterial());
 	m_ViewportCharacter = from_character;
+	
+	m_bViewportOverwritten = true;
 }
 
 const TTuple<UImage*, AStatisticsViewportCharacter*> UStatisticsOverviewWidget::GetOverwriteStructure() const
 {
 	return TTuple<UImage*, AStatisticsViewportCharacter*>(main_viewport, m_ViewportCharacter);
-}
-
-void UStatisticsOverviewWidget::DestroyViewport()
-{
-	if (m_ViewportCharacter && !m_bWasViewportOverwritten)
-	{
-		m_ViewportCharacter->Destroy();
-	}
-	if (m_ComparisonViewportCharacter)
-	{
-		m_ComparisonViewportCharacter->Destroy();
-	}
 }
 
 void UStatisticsOverviewWidget::OnViewportMouseDown()
