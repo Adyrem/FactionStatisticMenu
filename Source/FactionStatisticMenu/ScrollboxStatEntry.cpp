@@ -42,15 +42,17 @@ FString UScrollboxStatEntry::GetComparisonValue() const
 
 void UScrollboxStatEntry::ApplyColorToComparison(const EComparisonOptions& comparison_option)
 {
-	switch (comparison_option)
+	if (m_ComparisonValue)
 	{
-	case EComparisonOptions::less_than: m_ComparisonValue->SetColorAndOpacity(less_than_color);
-		break;
-	case EComparisonOptions::more_than: m_ComparisonValue->SetColorAndOpacity(more_than_color);
-		break;
-	default:
-		m_ComparisonValue->SetColorAndOpacity(equal_color);
-		break;
+		switch (comparison_option)
+		{
+		case EComparisonOptions::less_than: m_ComparisonValue->SetColorAndOpacity(less_than_color);
+			break;
+		case EComparisonOptions::more_than: m_ComparisonValue->SetColorAndOpacity(more_than_color);
+			break;
+		default:
+			m_ComparisonValue->SetColorAndOpacity(equal_color);
+			break;
+		}
 	}
-
 }

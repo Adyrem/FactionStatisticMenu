@@ -113,7 +113,7 @@ UStreamableRenderAsset* UStatisticsOverviewWidget::RetrieveMeshfromDataAsset(con
 	}
 }
 
-void UStatisticsOverviewWidget::AddEntriesToScrollBox(const UEntityDataAsset* main, const UEntityDataAsset* comparison)
+void UStatisticsOverviewWidget::AddEntriesToScrollBox(UScrollBox* scroll_box, const UEntityDataAsset* main, const UEntityDataAsset* comparison)
 {
 	if (scroll_entry_widget)
 	{
@@ -142,15 +142,15 @@ void UStatisticsOverviewWidget::AddEntriesToScrollBox(const UEntityDataAsset* ma
 					ressources_cost->SetComparisonValue("");
 				}
 
-				m_StatsScrollBox->AddChild(health);
-				m_StatsScrollBox->AddChild(ressources_cost);
+				scroll_box->AddChild(health);
+				scroll_box->AddChild(ressources_cost);
 
 				//add stats specific to the asset type
 				const UUnitDataAsset* unit_asset = Cast<UUnitDataAsset>(main);
 				const UUnitDataAsset* comparison_unit_asset = Cast<UUnitDataAsset>(comparison);
 				if (unit_asset)
 				{
-					AddUnitStats(unit_asset, comparison_unit_asset);
+					AddUnitStats(m_StatsScrollBox, unit_asset, comparison_unit_asset);
 					return;
 				}
 
@@ -158,7 +158,7 @@ void UStatisticsOverviewWidget::AddEntriesToScrollBox(const UEntityDataAsset* ma
 				const UBuildingDataAsset* comparison_building_asset = Cast<UBuildingDataAsset>(comparison);
 				if (building_asset)
 				{
-					AddBuildingStats(building_asset, comparison_building_asset);
+					AddBuildingStats(m_StatsScrollBox, building_asset, comparison_building_asset);
 					return;
 				}
 			}
@@ -166,27 +166,41 @@ void UStatisticsOverviewWidget::AddEntriesToScrollBox(const UEntityDataAsset* ma
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Tried to add an entry to the stat scroll box, but no entry widget was provided"));
+		UE_LOG(LogTemp, Warning, TEXT("Tried to add an entry to the stat scroll box, but no entry widget type was provided"));
 	}
 }
 
 void UStatisticsOverviewWidget::RebuildScrollboxEntries()
 {
-	for (UWidget* child : m_StatsScrollBox->GetAllChildren())
+	for (TTuple<FName, UScrollboxStatEntry*> entry : m_ScrollEntries)
 	{
-		m_StatsScrollBox->RemoveChild(child);
+		entry.Value->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
-	AddEntriesToScrollBox(m_MainDataAsset, m_ComparisonDataAsset);
+	AddEntriesToScrollBox(m_StatsScrollBox, m_MainDataAsset, m_ComparisonDataAsset);
 }
 
 UScrollboxStatEntry* UStatisticsOverviewWidget::PrepareScrollBoxEntry(const FName& name)
 {
-	if (!scroll_entry_widget)
+	UScrollboxStatEntry* return_widget;
+	if (m_ScrollEntries.Find(name))
 	{
-		return nullptr;
+		return_widget = *m_ScrollEntries.Find(name);
+		return_widget->SetVisibility(ESlateVisibility::Visible);
+		return_widget->SetStatValue("");
+		return_widget->SetComparisonValue("");
+		return_widget->ApplyColorToComparison(EComparisonOptions::equal);
 	}
-	UScrollboxStatEntry* return_widget = CreateWidget<UScrollboxStatEntry>(this, scroll_entry_widget, name);
+	else
+	{
+		if (!scroll_entry_widget)
+		{
+			return nullptr;
+		}
+		return_widget = CreateWidget<UScrollboxStatEntry>(this, scroll_entry_widget, name);
+		m_ScrollEntries.Add(name, return_widget);
+	}
+
 	if (return_widget)
 	{
 		return_widget->SetStatName(name.ToString());
@@ -211,9 +225,13 @@ void UStatisticsOverviewWidget::ApplyColorBasedOnDifference(const int32& differe
 			applied_to->ApplyColorToComparison(EComparisonOptions::equal);
 		}
 	}
+	else
+	{
+		applied_to->ApplyColorToComparison(EComparisonOptions::equal); //if the coloring is disabled, still set it to the equal color if another is currently set
+	}
 }
 
-void UStatisticsOverviewWidget::AddUnitStats(const UUnitDataAsset* unit_asset, const UUnitDataAsset* comparison_asset)
+void UStatisticsOverviewWidget::AddUnitStats(UScrollBox* scroll_box, const UUnitDataAsset* unit_asset, const UUnitDataAsset* comparison_asset)
 {
 	UScrollboxStatEntry* group_size = PrepareScrollBoxEntry("Group Size");
 	group_size->SetStatValue(FString::FromInt(unit_asset->group_size));
@@ -238,7 +256,7 @@ void UStatisticsOverviewWidget::AddUnitStats(const UUnitDataAsset* unit_asset, c
 			}
 		}
 
-		m_StatsScrollBox->AddChild(damage);
+		scroll_box->AddChild(damage);
 	}
 
 	if (comparison_asset)
@@ -256,11 +274,11 @@ void UStatisticsOverviewWidget::AddUnitStats(const UUnitDataAsset* unit_asset, c
 		damage->SetComparisonValue("");
 	}
 
-	m_StatsScrollBox->AddChild(group_size);
-	m_StatsScrollBox->AddChild(max_walk_speed);
+	scroll_box->AddChild(group_size);
+	scroll_box->AddChild(max_walk_speed);
 }
 
-void UStatisticsOverviewWidget::AddBuildingStats(const UBuildingDataAsset* building_asset, const UBuildingDataAsset* comparison_asset)
+void UStatisticsOverviewWidget::AddBuildingStats(UScrollBox* scroll_box, const UBuildingDataAsset* building_asset, const UBuildingDataAsset* comparison_asset)
 {
 
 	if (comparison_asset)
@@ -269,7 +287,7 @@ void UStatisticsOverviewWidget::AddBuildingStats(const UBuildingDataAsset* build
 	}
 }
 
-void UStatisticsOverviewWidget::AddHeroStats(const UUnitDataAsset* unit_asset, const UUnitDataAsset* comparison_asset)
+void UStatisticsOverviewWidget::AddHeroStats(UScrollBox* scroll_box, const UUnitDataAsset* unit_asset, const UUnitDataAsset* comparison_asset)
 {
 
 	if (comparison_asset)

@@ -112,13 +112,13 @@ private:
 	* @param main - main data asset with stats of the unit/building
 	* @param comparison - if present, it's stats will be added to the scrollbox alongside the main entity stats
 	*/
-	void AddEntriesToScrollBox(const UEntityDataAsset* main, const UEntityDataAsset* comparison = nullptr);
+	void AddEntriesToScrollBox(UScrollBox* scroll_box, const UEntityDataAsset* main, const UEntityDataAsset* comparison = nullptr);
 	/**
-	* Removes all entries in the stats scroll box an adds them again.
+	* Hides all entries in the stats scroll box and adds the now needed ones.
 	*/
 	void RebuildScrollboxEntries();
 	/**
-	* Creates a basic UScrollboxStatEntry and sets its name element
+	* Creates a basic UScrollboxStatEntry and sets its name element. Returns the widget with the same name if it already exists after reinitializing it
 	* @param name - needs to be unique, as widgets need different names
 	* @return Basic initialized scroll box entry widget
 	*/
@@ -134,9 +134,9 @@ private:
 	* @param unit_asset - the main data asset
 	* @param comparison_asset - optional data asset for the comparison unit
 	*/
-	void AddUnitStats(const UUnitDataAsset* unit_asset, const UUnitDataAsset* comparison_asset = nullptr);
-	void AddBuildingStats(const UBuildingDataAsset* building_asset, const UBuildingDataAsset* comparison_asset = nullptr);
-	void AddHeroStats(const UUnitDataAsset* unit_asset, const UUnitDataAsset* comparison_asset = nullptr);
+	void AddUnitStats(UScrollBox* scroll_box, const UUnitDataAsset* unit_asset, const UUnitDataAsset* comparison_asset = nullptr);
+	void AddBuildingStats(UScrollBox* scroll_box, const UBuildingDataAsset* building_asset, const UBuildingDataAsset* comparison_asset = nullptr);
+	void AddHeroStats(UScrollBox* scroll_box, const UUnitDataAsset* unit_asset, const UUnitDataAsset* comparison_asset = nullptr);
 	/**
 	* Creates a AVieportCharacter with an attached render target, that can be rendered to for example a UImage through a material
 	* @param mesh - The character requires a skeletal or static mesh.
@@ -152,8 +152,6 @@ private:
 		UAnimSequence* animation = nullptr
 	) const;
 
-	AStatisticsViewportCharacter* m_ViewportCharacter;
-	AStatisticsViewportCharacter* m_ComparisonViewportCharacter;
 	UPROPERTY(EditAnywhere)
 		UEntityDataAsset* m_MainDataAsset;
 	UPROPERTY(EditAnywhere)
@@ -162,6 +160,10 @@ private:
 		UAnimSequence* m_MainAnimation;
 	UPROPERTY(EditAnywhere)
 		UAnimSequence* m_ComparisonAnimation;
+
+	AStatisticsViewportCharacter* m_ViewportCharacter;
+	AStatisticsViewportCharacter* m_ComparisonViewportCharacter;
+	TMap<FName, UScrollboxStatEntry*> m_ScrollEntries;
 
 	bool m_bViewportOverwritten = false;
 };
