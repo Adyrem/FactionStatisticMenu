@@ -18,16 +18,22 @@ void UStatisticsOverviewWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	//incase data assets and animations were set through blueprint.
-	if (m_MainDataAsset)
+	if (main_viewport)
 	{
-		InitializeWidget(m_MainDataAsset, m_MainAnimation, m_ComparisonDataAsset, m_ComparisonAnimation);
+		main_viewport->OnMouseButtonDownEvent.BindUFunction(this, FName("OnViewportMouseDown"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("No main viewport was assigned"));
 	}
 
-	main_viewport->OnMouseButtonDownEvent.BindUFunction(this, FName("OnViewportMouseDown"));
 	if (comparison_viewport)
 	{
 		comparison_viewport->OnMouseButtonDownEvent.BindUFunction(this, FName("OnComparisonViewportMouseDown"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No comparison viewport was assigned"))
 	}
 
 	if (m_CompareButton)
@@ -351,7 +357,7 @@ void UStatisticsOverviewWidget::OnViewportMouseDown()
 	}
 }
 
-//cant pass parameters to BindUFunction events, so this reduncancy is sadly needed in some way
+//cant pass parameters to FScriptDelegate->BindUFunction events, so this reduncancy is sadly needed in some way
 void UStatisticsOverviewWidget::OnComparisonViewportMouseDown()
 {
 	if (m_ComparisonViewportCharacter)

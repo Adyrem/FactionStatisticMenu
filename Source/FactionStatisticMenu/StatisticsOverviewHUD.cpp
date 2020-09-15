@@ -62,7 +62,7 @@ void AStatisticsOverviewHUD::OnUnitSelectionClick(UUnitSelectionButton* unit_sel
 				{
 					return;
 				}
-				m_ComparisonWidget->AddToViewport();
+				m_ComparisonWidget->AddToViewport(2); //add zorder to ensure that this stays in front
 			}
 
 			m_ComparisonWidget->InitializeWidget(m_MainSelectedUnit->data_asset, m_MainSelectedUnit->animation_sequence, unit_selection_button->data_asset, unit_selection_button->animation_sequence);
@@ -80,13 +80,13 @@ void AStatisticsOverviewHUD::OnUnitSelectionClick(UUnitSelectionButton* unit_sel
 			{
 				return;
 			}
-			m_StatisticsWidget->AddToViewport();
+			m_StatisticsWidget->AddToViewport(1);
 		}
 
 		m_StatisticsWidget->InitializeWidget(unit_selection_button->data_asset, unit_selection_button->animation_sequence);
 		m_TopWidget = m_StatisticsWidget;
 		m_MainSelectedUnit = unit_selection_button;
-		m_StatisticsWidget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		m_StatisticsWidget->SetVisibility(ESlateVisibility::Visible);
 	}
 }
 
@@ -105,6 +105,7 @@ void AStatisticsOverviewHUD::OnBackButtonClick(UWidget* caller)
 
 		if (m_TopWidget == m_StatisticsWidget)
 		{
+			//have to remove and later add to viewport to ensure that it is in front. (only needed if another widget can be created in the mean time, as it is less efficient)
 			m_StatisticsWidget->SetVisibility(ESlateVisibility::Collapsed);
 			m_TopWidget = m_UnitSelectionWidget;
 		}

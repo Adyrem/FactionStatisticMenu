@@ -13,11 +13,12 @@ AStatisticsViewportCharacter::AStatisticsViewportCharacter()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
+	GetCapsuleComponent()->SetSimulatePhysics(true); //otherwise only simulates once controlled
+
 	//moving the mesh to the bottom is harder than just reducing the collider size. 
 	//The pivot of the mesh should be at the bottom for this, otherwise it will clip through the floor if gravity is enabled
-	GetCapsuleComponent()->SetCapsuleRadius(1.f); 
-	GetCapsuleComponent()->SetCapsuleHalfHeight(1.f); 
-	GetCapsuleComponent()->SetSimulatePhysics(true); //otherwise only simulates once controlled
+	GetCapsuleComponent()->SetCapsuleRadius(5.f); 
+	GetCapsuleComponent()->SetCapsuleHalfHeight(5.f); 
 
 	m_SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
 	m_SpringArm->bInheritPitch = true;

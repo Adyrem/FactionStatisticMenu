@@ -27,6 +27,23 @@ class FACTIONSTATISTICMENU_API UStatisticsOverviewWidget : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 
+	/**
+	* Initializes everything needed to build the viewport and display the statistics. Can also be used to reinitialize the object.
+	* @param main_data - data asset containing most importantly statistics and a mesh
+	* @param main_animation_sequence - animation applied to the mesh if it is a skeletal mesh
+	*/
+		void InitializeWidget(UEntityDataAsset* main_data, UAnimSequence* main_animation_sequence);
+	/**
+	* Initializes everyting needed to build the main and comparison viewport. Can also be used to reinitialize the object.
+	* @param main_data - data asset containing most importantly statistics and a mesh
+	* @param main_animation_sequence - animation applied to the mesh if it is a skeletal mesh
+	* @param comp_data - same as main data asset but for comparison
+	* @param comp_animation_sequence - same as main animation but for comparison
+	*/
+	UFUNCTION(BlueprintCallable)
+		void InitializeWidget(UEntityDataAsset* main_data, UAnimSequence* main_animation_sequence, UEntityDataAsset* comp_data, UAnimSequence* comp_animation_sequence);
+
+
 	//need to be set, preferably in editor as they can be the same for all units except maybe special cases
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		TSubclassOf<UScrollboxStatEntry> scroll_entry_widget;
@@ -67,21 +84,6 @@ public:
 	* @return A tuple of the image representing the viewport and the character seen in the viewport
 	*/
 	const TTuple<UImage*, AStatisticsViewportCharacter*> GetOverwriteStructure() const;
-
-	/**
-	* Initializes everything needed to build the viewport and display the statistics. Can also be used to reinitialize the object.
-	* @param main_data - data asset containing most importantly statistics and a mesh
-	* @param main_animation_sequence - animation applied to the mesh if it is a skeletal mesh
-	*/
-	void InitializeWidget(UEntityDataAsset* main_data, UAnimSequence* main_animation_sequence);
-	/**
-	* Initializes everyting needed to build the main and comparison viewport. Can also be used to reinitialize the object.
-	* @param main_data - data asset containing most importantly statistics and a mesh
-	* @param main_animation_sequence - animation applied to the mesh if it is a skeletal mesh
-	* @param comp_data - same as main data asset but for comparison
-	* @param comp_animation_sequence - same as main animation but for comparison
-	*/
-	void InitializeWidget(UEntityDataAsset* main_data, UAnimSequence* main_animation_sequence, UEntityDataAsset* comp_data, UAnimSequence* comp_animation_sequence);
 
 private:
 	/**
@@ -152,13 +154,13 @@ private:
 		UAnimSequence* animation = nullptr
 	) const;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		UEntityDataAsset* m_MainDataAsset;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		UEntityDataAsset* m_ComparisonDataAsset;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		UAnimSequence* m_MainAnimation;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		UAnimSequence* m_ComparisonAnimation;
 
 	AStatisticsViewportCharacter* m_ViewportCharacter;
